@@ -50,6 +50,10 @@ pub struct DisciplrVault;
 #[contractimpl]
 impl DisciplrVault {
     /// Create a new productivity vault. Caller must have approved USDC transfer to this contract.
+    ///
+    /// # Validation Rules
+    /// - Requires `start_timestamp < end_timestamp`. If `start_timestamp >= end_timestamp`, the function panics
+    ///   because a 0-length or reverse-time window is invalid.
     pub fn create_vault(
         env: Env,
         creator: Address,
