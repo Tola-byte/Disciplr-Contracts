@@ -217,22 +217,10 @@ mod tests {
     #[should_panic]
     fn test_create_vault_fails_without_auth() {
         let env = Env::default();
-        let creator = Address::from_str(
-            &env,
-            "GA7QSTUFYSDQ6UJ4ZCI4NZ4XVAFYZZL64YWNMUBCNY4FWYDTFTCHMLYT",
-        );
-        let success_addr = Address::from_str(
-            &env,
-            "GBRPYHIL2CI3WHZDTOOQFC6EB4PSLTW5L6GR6VVBW3DZEWYWHTVJJTH",
-        );
-        let failure_addr = Address::from_str(
-            &env,
-            "GBL3F5IBYFVZ5G76XPVSLVZF4TP5ELK3V3XKX7DDBMF4UGQJ5AJ5MCEE",
-        );
-        let verifier = Address::from_str(
-            &env,
-            "GAEB3HFKHWVT4JNGVR5VXAQTFVVFXSWK3HMJKHCX5ZA67OPXVSXL5VU",
-        );
+        let creator = Address::generate(&env);
+        let success_addr = Address::generate(&env);
+        let failure_addr = Address::generate(&env);
+        let verifier = Address::generate(&env);
         let milestone_hash = BytesN::<32>::from_array(&env, &[0u8; 32]);
 
         // DO NOT authorize the creator
@@ -256,26 +244,11 @@ mod tests {
     #[should_panic]
     fn test_create_vault_caller_differs_from_creator() {
         let env = Env::default();
-        let creator = Address::from_str(
-            &env,
-            "GA7QSTUFYSDQ6UJ4ZCI4NZ4XVAFYZZL64YWNMUBCNY4FWYDTFTCHMLYT",
-        );
-        let different_caller = Address::from_str(
-            &env,
-            "GBRPYHIL2CI3WHZDTOOQFC6EB4PSLTW5L6GR6VVBW3DZEWYWHTVJJTH",
-        );
-        let success_addr = Address::from_str(
-            &env,
-            "GBL3F5IBYFVZ5G76XPVSLVZF4TP5ELK3V3XKX7DDBMF4UGQJ5AJ5MCEE",
-        );
-        let failure_addr = Address::from_str(
-            &env,
-            "GAEB3HFKHWVT4JNGVR5VXAQTFVVFXSWK3HMJKHCX5ZA67OPXVSXL5VU",
-        );
-        let verifier = Address::from_str(
-            &env,
-            "GCZQZ4Q67GKSUQ3BP4M6IMDMVGPEMYG2WN4FXBFTV3VBWVVDNVHZPMHA",
-        );
+        let creator = Address::generate(&env);
+        let different_caller = Address::generate(&env);
+        let success_addr = Address::generate(&env);
+        let failure_addr = Address::generate(&env);
+        let verifier = Address::generate(&env);
         let milestone_hash = BytesN::<32>::from_array(&env, &[1u8; 32]);
 
         // Authorize the different caller, NOT the creator
@@ -350,22 +323,10 @@ mod tests {
     fn test_authorization_prevents_unauthorized_creation() {
         let env = Env::default();
 
-        let creator = Address::from_str(
-            &env,
-            "GA7QSTUFYSDQ6UJ4ZCI4NZ4XVAFYZZL64YWNMUBCNY4FWYDTFTCHMLYT",
-        );
-        let attacker = Address::from_str(
-            &env,
-            "GBRPYHIL2CI3WHZDTOOQFC6EB4PSLTW5L6GR6VVBW3DZEWYWHTVJJTH",
-        );
-        let success_addr = Address::from_str(
-            &env,
-            "GBL3F5IBYFVZ5G76XPVSLVZF4TP5ELK3V3XKX7DDBMF4UGQJ5AJ5MCEE",
-        );
-        let failure_addr = Address::from_str(
-            &env,
-            "GAEB3HFKHWVT4JNGVR5VXAQTFVVFXSWK3HMJKHCX5ZA67OPXVSXL5VU",
-        );
+        let creator = Address::generate(&env);
+        let attacker = Address::generate(&env);
+        let success_addr = Address::generate(&env);
+        let failure_addr = Address::generate(&env);
         let milestone_hash = BytesN::<32>::from_array(&env, &[4u8; 32]);
 
         // Attacker tries to authorize themselves
