@@ -1,19 +1,3 @@
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use soroban_sdk::{testutils::Address as TestAddress, Env, Address, BytesN};
-
-    #[test]
-    fn cancel_vault_fails_for_nonexistent_vault() {
-        let env = Env::default();
-        let contract = DisciplrVault {};
-        let creator = Address::from_account_id(&env, &TestAddress::random(&env));
-        let vault_id = 9999; // Non-existent vault_id
-        // Should fail: cancel_vault returns false or panics
-        let result = contract.cancel_vault(env.clone(), vault_id);
-        assert!(!result, "cancel_vault should fail for non-existent vault_id");
-    }
-}
 #![no_std]
 
 use soroban_sdk::{
@@ -58,9 +42,6 @@ pub struct ProductivityVault {
 pub enum DataKey {
     NextVaultId,
     Vault(u32),
-#[derive(Clone)]
-pub enum DataKey {
-    Vault(u32),
     VaultCount,
 }
 
@@ -93,17 +74,6 @@ impl DisciplrVault {
             panic!("create_vault: start_timestamp must be strictly less than end_timestamp");
         }
 
-        let mut vault_count: u32 = env
-            .storage()
-            .instance()
-            .get(&DataKey::VaultCount)
-            .unwrap_or(0);
-        let vault_id = vault_count;
-        vault_count += 1;
-        env.storage()
-            .instance()
-            .set(&DataKey::VaultCount, &vault_count);
-
         let vault = ProductivityVault {
             creator,
             amount,
@@ -126,12 +96,6 @@ impl DisciplrVault {
         env.storage()
             .instance()
             .set(&DataKey::NextVaultId, &(vault_id + 1));
-        
-        env.storage().instance().set(&DataKey::Vault(vault_id), &vault);
-
-        env.storage()
-            .instance()
-            .set(&DataKey::Vault(vault_id), &vault);
 
         env.events()
             .publish((Symbol::new(&env, "vault_created"), vault_id), vault);
@@ -143,7 +107,7 @@ impl DisciplrVault {
         let vault_key = DataKey::Vault(vault_id);
         let mut vault: ProductivityVault = env
             .storage()
-            .instance()
+            .persistent()
             .get(&vault_key)
             .ok_or(Error::VaultNotFound)?;
 
@@ -164,7 +128,7 @@ impl DisciplrVault {
         }
 
         vault.status = VaultStatus::Completed;
-        env.storage().instance().set(&vault_key, &vault);
+        env.storage().persistent().set(&vault_key, &vault);
 
         env.events()
             .publish((Symbol::new(&env, "milestone_validated"), vault_id), ());
@@ -176,7 +140,7 @@ impl DisciplrVault {
         let vault_key = DataKey::Vault(vault_id);
         let mut vault: ProductivityVault = env
             .storage()
-            .instance()
+            .persistent()
             .get(&vault_key)
             .ok_or(Error::VaultNotFound)?;
 
@@ -188,7 +152,7 @@ impl DisciplrVault {
         // For now, let's just make it a stub that updates status if called.
         // In a real impl, this would handle the actual USDC transfer.
         vault.status = VaultStatus::Completed;
-        env.storage().instance().set(&vault_key, &vault);
+        env.storage().persistent().set(&vault_key, &vault);
         Ok(true)
     }
 
@@ -197,7 +161,7 @@ impl DisciplrVault {
         let vault_key = DataKey::Vault(vault_id);
         let mut vault: ProductivityVault = env
             .storage()
-            .instance()
+            .persistent()
             .get(&vault_key)
             .ok_or(Error::VaultNotFound)?;
 
@@ -210,7 +174,7 @@ impl DisciplrVault {
         }
 
         vault.status = VaultStatus::Failed;
-        env.storage().instance().set(&vault_key, &vault);
+        env.storage().persistent().set(&vault_key, &vault);
         Ok(true)
     }
 
@@ -219,7 +183,7 @@ impl DisciplrVault {
         let vault_key = DataKey::Vault(vault_id);
         let mut vault: ProductivityVault = env
             .storage()
-            .instance()
+            .persistent()
             .get(&vault_key)
             .ok_or(Error::VaultNotFound)?;
 
@@ -230,7 +194,7 @@ impl DisciplrVault {
         }
 
         vault.status = VaultStatus::Cancelled;
-        env.storage().instance().set(&vault_key, &vault);
+        env.storage().persistent().set(&vault_key, &vault);
         Ok(true)
     }
 
@@ -287,12 +251,8 @@ mod tests {
         assert_eq!(vault.success_destination, success_destination);
         assert_eq!(vault.failure_destination, failure_destination);
         assert_eq!(vault.status, VaultStatus::Active);
-        env.storage().instance().get(&DataKey::Vault(vault_id))
     }
-}
 
-#[cfg(test)]
-mod tests {
     extern crate std;
 
     use super::*;
@@ -417,7 +377,7 @@ mod tests {
         
         // Simply assert that an error occurred - the exact error type is verified by the implementation
     }
-}
+
 
     /// Test milestone hash generation
     #[test]
