@@ -372,6 +372,32 @@ mod test {
         let vault = client.get_vault_state(&vault_id).unwrap();
         assert_eq!(vault.status, VaultStatus::Completed);
     }
+
+    #[test]
+    fn test_release_funds_rejects_non_existent_vault() {
+        let env = Env::default();
+        let contract_id = env.register(DisciplrVault, ());
+        let client = DisciplrVaultClient::new(&env, &contract_id);
+
+        // Try to release funds for a non-existent vault ID
+        let result = client.try_release_funds(&999);
+        assert!(result.is_err());
+        
+        // Simply assert that an error occurred - the exact error type is verified by the implementation
+    }
+
+    #[test]
+    fn test_redirect_funds_rejects_non_existent_vault() {
+        let env = Env::default();
+        let contract_id = env.register(DisciplrVault, ());
+        let client = DisciplrVaultClient::new(&env, &contract_id);
+
+        // Try to redirect funds for a non-existent vault ID
+        let result = client.try_redirect_funds(&999);
+        assert!(result.is_err());
+        
+        // Simply assert that an error occurred - the exact error type is verified by the implementation
+    }
 }
 
 #[cfg(test)]
