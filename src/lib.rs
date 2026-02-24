@@ -728,6 +728,40 @@ mod tests {
         assert_eq!(vault.status, VaultStatus::Completed);
     }
 
+    /// After `release_funds`, the success destination balance must increase
+    /// by the vault amount and the contract's USDC balance must decrease
+    /// by the same amount (i.e., funds leave the contract and arrive at
+    /// the success destination).
+    #[test]
+    fn test_release_funds_updates_contract_and_success_balances() {
+        let setup = TestSetup::new();
+        let client = setup.client();
+
+        // Create vault at start_timestamp.
+        setup.env.ledger().set_timestamp(setup.start_timestamp);
+        let vault_id = setup.create_default_vault();
+
+        // Validate milestone so we can release before the deadline.
+        client.validate_milestone(&vault_id);
+
+        let usdc = setup.usdc_client();
+
+        // Contract holds the locked funds after vault creation.
+        let contract_before = usdc.balance(&setup.contract_id);
+        let success_before = usdc.balance(&setup.success_dest);
+
+        let result = client.release_funds(&vault_id, &setup.usdc_token);
+        assert!(result);
+
+        let contract_after = usdc.balance(&setup.contract_id);
+        let success_after = usdc.balance(&setup.success_dest);
+
+        // Success destination gains the vault amount.
+        assert_eq!(success_after - success_before, setup.amount);
+        // Contract balance decreases by the same vault amount.
+        assert_eq!(contract_before - contract_after, setup.amount);
+    }
+
     #[test]
     fn test_release_funds_after_deadline() {
         let setup = TestSetup::new();
@@ -831,6 +865,38 @@ mod tests {
 
         let vault = client.get_vault_state(&vault_id).unwrap();
         assert_eq!(vault.status, VaultStatus::Failed);
+    }
+
+    /// After `redirect_funds`, the failure destination balance must increase
+    /// by the vault amount and the contract's USDC balance must decrease
+    /// by the same amount (i.e., funds leave the contract and arrive at
+    /// the failure destination).
+    #[test]
+    fn test_redirect_funds_updates_contract_and_failure_balances() {
+        let setup = TestSetup::new();
+        let client = setup.client();
+
+        setup.env.ledger().set_timestamp(setup.start_timestamp);
+        let vault_id = setup.create_default_vault();
+
+        // Move past the deadline without validation so redirect is allowed.
+        setup.env.ledger().set_timestamp(setup.end_timestamp + 1);
+
+        let usdc = setup.usdc_client();
+
+        let contract_before = usdc.balance(&setup.contract_id);
+        let failure_before = usdc.balance(&setup.failure_dest);
+
+        let result = client.redirect_funds(&vault_id, &setup.usdc_token);
+        assert!(result);
+
+        let contract_after = usdc.balance(&setup.contract_id);
+        let failure_after = usdc.balance(&setup.failure_dest);
+
+        // Failure destination gains the vault amount.
+        assert_eq!(failure_after - failure_before, setup.amount);
+        // Contract balance decreases by the same vault amount.
+        assert_eq!(contract_before - contract_after, setup.amount);
     }
 
     #[test]
